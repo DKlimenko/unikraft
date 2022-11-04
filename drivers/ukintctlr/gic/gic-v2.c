@@ -382,6 +382,7 @@ static void gicv2_handle_irq(struct __regs *regs)
 		if (irq <= GIC_MAX_IRQ) {
 			uk_intctlr_irq_handle(regs, irq);
 			gicv2_eoi_irq(stat);
+
 			continue;
 		}
 
@@ -499,6 +500,7 @@ static int gicv2_initialize(void)
 
 static void gicv2_set_ops(void)
 {
+	int fdt_gic, r;
 	struct _gic_operations drv_ops = {
 		.initialize        = gicv2_initialize,
 		.ack_irq           = gicv2_ack_irq,
@@ -508,6 +510,7 @@ static void gicv2_set_ops(void)
 		.set_irq_trigger   = gicv2_set_irq_trigger,
 		.set_irq_prio      = gicv2_set_irq_prio,
 		.set_irq_affinity  = gicv2_set_irq_target,
+		.irq_translate     = gic_irq_translate,
 		.handle_irq        = gicv2_handle_irq,
 		.gic_sgi_gen       = gicv2_sgi_gen_to_cpu,
 	};
@@ -597,6 +600,8 @@ static int gicv2_do_probe(void)
 		return r;
 	}
 
+	ukplat_irq_setup(gicv2_drv.dist_mem_addr, gicv2_drv.cpuif_mem_addr,
+			 &gicv2_drv.dist_mem_addr, &gicv2_drv.cpuif_mem_addr);
 	return 0;
 }
 #endif /* !CONFIG_UKPLAT_ACPI */
@@ -605,6 +610,7 @@ static int gicv2_do_probe(void)
  * Probe device tree or ACPI for GICv2
  * NOTE: First time must not be called from multiple CPUs in parallel
  *
+ * @param [in] fdt pointer to device tree
  * @param [out] dev receives pointer to GICv2 if available, NULL otherwise
  *
  * @return 0 if device is available, an FDT (FDT_ERR_*) error otherwise

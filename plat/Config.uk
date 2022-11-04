@@ -124,3 +124,9 @@ config FPSIMD
 	depends on ARCH_ARM_64
 	help
 		Enable support FPU usage in application
+
+config LIBOFW
+	bool "Open Firmware library support"
+	default n
+	depends on ARCH_ARM_64
+	select LIBFDT

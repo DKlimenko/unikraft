@@ -677,10 +677,9 @@ static int gicv3_do_probe(void)
 	 */
 	r = fdt_get_address(fdt, fdt_gic, 1, &gicv3_drv.rdist_mem_addr,
 				&gicv3_drv.rdist_mem_size);
-	if (unlikely(r < 0)) {
-		uk_pr_err("Could not find GICv3 redistributor region!\n");
-		return r;
-	}
+
+	ukplat_irq_setup(gicv3_drv.dist_mem_addr, gicv3_drv.rdist_mem_addr,
+				&gicv3_drv.dist_mem_addr, &gicv3_drv.rdist_mem_addr);
 
 	return 0;
 }
@@ -717,6 +716,11 @@ int gicv3_probe(struct _gic_dev **dev)
 	if (rc) {
 		*dev = NULL;
 		return rc;
+	}
+
+	if (unlikely(r < 0)) {
+		uk_pr_err("Could not find GICv3 redistributor region!\n");
+		return r;
 	}
 
 	uk_pr_info("Found GICv3 on:\n");

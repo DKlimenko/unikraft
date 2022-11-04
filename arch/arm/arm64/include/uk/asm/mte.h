@@ -87,6 +87,7 @@ static inline __u64 mte_load_alloc(__u64 addr)
 			      : "=&r" (tag) : "r"(addr));
 	return tag;
 }
+#endif
 
 /**
  * Writes a tag into tag allocation memory.
@@ -99,4 +100,11 @@ static inline void mte_store_alloc(__u64 addr)
 	__asm__ __volatile__ ("stg	%x0, [%x0]"
 			      : : "r"(addr) : "memory");
 }
+
+#if defined(__aarch64__) && defined(CONFIG_PLAT_XEN)
+void ukplat_irq_setup(uint64_t dist_addr, uint64_t rdist_addr,
+				uint64_t *vdist_addr, uint64_t *vrdist_adidr);
+#else
+#define ukplat_irq_setup(dist_addr, rdist_addr, vdist_addr, vrdist_addr)
+#endif
 
