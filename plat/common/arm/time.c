@@ -35,6 +35,7 @@
 #include <uk/assert.h>
 #include <uk/plat/time.h>
 #include <uk/plat/lcpu.h>
+#include <uk/plat/irq.h>
 #include <uk/bitops.h>
 #include <uk/plat/common/cpu.h>
 #include <uk/plat/common/sections.h>
@@ -47,6 +48,13 @@ static const char * const arch_timer_list[] = {
 	"arm,armv7-timer",
 	NULL
 };
+
+#if defined(CONFIG_PLAT_XEN)
+extern void *HYPERVISOR_dtb;
+#define _DTB_PTR HYPERVISOR_dtb
+#else
+#define _DTB_PTR _dtb
+#endif
 
 static uint32_t timer_irq;
 static void *dtb;
@@ -77,7 +85,7 @@ uint32_t generic_timer_get_frequency(int fdt_timer)
 	* by the firmware. A property in the DT (clock-frequency) has
 	* been introduced to workaround those firmware.
 	*/
-	fdt_freq = fdt_getprop(dtb, fdt_timer, "clock-frequency", &len);
+	fdt_freq = fdt_getprop(_DTB_PTR, fdt_timer, "clock-frequency", &len);
 	if (!fdt_freq || (len <= 0)) {
 		uk_pr_info("No clock-frequency found, reading from register directly.\n");
 
@@ -119,7 +127,7 @@ void ukplat_time_init(void)
 	generic_timer_update_boot_ticks();
 
 	/* Currently, we only support 1 timer per system */
-	offs = fdt_node_offset_by_compatible_list(dtb, -1, arch_timer_list);
+	offs = fdt_node_offset_by_compatible_list(_DTB_PTR, -1, arch_timer_list);
 	if (unlikely(offs < 0))
 		UK_CRASH("Could not find arch timer (%d)\n", offs);
 
@@ -127,7 +135,7 @@ void ukplat_time_init(void)
 	if (unlikely(rc < 0))
 		UK_CRASH("Failed to initialize platform time (%d)\n", rc);
 
-	rc = uk_intctlr_irq_fdt_xlat(dtb, offs, 2, &irq);
+	rc = uk_intctlr_irq_fdt_xlat(_DTB_PTR, offs, 2, &irq);
 	if (unlikely(rc < 0))
 		UK_CRASH("Could not get IRQ from dtb (%d)\n", rc);
 
